@@ -1,45 +1,32 @@
-document.getElementById('startButton').addEventListener('click', () => {
-  const hashtag = document.getElementById('hashtag').value;
-  if (!hashtag) {
-    document.getElementById('result').innerText = 'Please enter a hashtag.';
-    return;
-  }
+// Example of obtaining user access token in Chrome extension popup.js
 
-  document.getElementById('startButton').disabled = true;
-  document.getElementById('stopButton').disabled = false;
-  document.getElementById('result').innerText = 'Counting posts...';
-  console.log("Starting counting for hashtag:", hashtag);
+document.getElementById('loginButton').addEventListener('click', async () => {
+  const appId = '1782448035498130';
+  const redirectUri = 'https://localhost/';
+  const scope = 'pages_read_engagement'; // Adjust scope as per your app's requirements
 
-  chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: 'startCounting', hashtag }, response => {
-      if (!response || response.status !== 'started') {
-        document.getElementById('result').innerText = 'Failed to start counting.';
-        document.getElementById('startButton').disabled = false;
-        document.getElementById('stopButton').disabled = true;
-      } else {
-        console.log("Counting started successfully");
+  // Construct OAuth dialog URL
+  const authUrl = `https://www.facebook.com/v13.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&scope=${scope}`;
+
+  // Open a new tab to initiate Facebook Login
+  chrome.tabs.create({ url: authUrl }, tab => {
+    // Listen for changes in the tab URL to capture the access token
+    chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
+      if (tabId === tab.id && changeInfo.url && changeInfo.url.startsWith(redirectUri)) {
+        // Parse access token from the URL fragment
+        const url = new URL(changeInfo.url);
+        const accessToken = url.searchParams.get('access_token');
+
+        // Save the access token securely (e.g., using chrome.storage.local)
+        chrome.storage.local.set({ accessToken }, () => {
+          console.log('Access token saved:', accessToken);
+          // Close the tab or handle further logic
+          chrome.tabs.remove(tab.id);
+        });
+
+        // Remove the listener to avoid multiple executions
+        chrome.tabs.onUpdated.removeListener(listener);
       }
     });
   });
-});
-
-document.getElementById('stopButton').addEventListener('click', () => {
-  document.getElementById('startButton').disabled = false;
-  document.getElementById('stopButton').disabled = true;
-  console.log("Stopping counting");
-
-  chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-    chrome.tabs.sendMessage(tabs[0].id, { action: 'stopCounting' }, response => {
-      if (response && response.status === 'stopped') {
-        document.getElementById('result').innerText = 'Stopped counting. Gathering results...';
-      }
-    });
-  });
-});
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'countResult') {
-    console.log("Received results:", request.postCount);
-    document.getElementById('result').innerText = `Number of posts with the hashtag: ${request.postCount}`;
-  }
 });

@@ -1,21 +1,19 @@
 {
-    "manifest_version": 3,
-    "name": "Facebook Hashtag Counter",
-    "version": "1.0",
-    "description": "Counts the number of posts using a specific hashtag on Facebook.",
-    "permissions": [
-      "activeTab",
-      "scripting"
-    ],
-    "action": {
-      "default_popup": "popup.html"
-     
-    },
-    "content_scripts": [
-      {
-        "matches": ["*://*.facebook.com/*"],
-        "js": ["content.js"]
-      }
-    ]
-  }
-  
+  "manifest_version": 3,
+  "name": "Hashtag Counter",
+  "version": "1.0",
+  "description": "Counts the number of posts with a specific hashtag.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
